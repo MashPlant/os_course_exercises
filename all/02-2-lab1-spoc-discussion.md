@@ -22,7 +22,21 @@
 ### 启动顺序
 
 1. x86段寄存器的字段含义和功能有哪些？
+  - CS：代码段寄存器
+  - DS：数据段寄存器
+  - SS：堆栈段寄存器
+
 2. x86描述符特权级DPL、当前特权级CPL和请求特权级RPL的含义是什么？在哪些寄存器中存在这些字段？对应的访问条件是什么？
+  - DPL：描述符特权（Descriptor Privilege Level）
+    - 存储在描述符中的权限位，用于描述代码的所属的特权等级，也就是代码本身真正的特权级。一个程序可以使用多个段(Data，Code，Stack)也可以只用一个code段等。
+  - RPL：请求特权级RPL(Request Privilege Level)
+    - RPL保存在除CS外的选择子的最低两位。RPL说明的是进程对段访问的请求权限，意思是当前进程想要的请求权限
+  - CPL：当前任务特权（Current Privilege Level）
+    - 表示当前正在执行的代码所处的特权级。CPL保存在CS中的最低两位，是针对CS而言的
+  - 访问条件
+    - 访问门时：$DPL(段) \le CPL \le DPL(门)$
+    - 访问段时：$max(CPL, RPL) \le DPL(段)$
+
 3. 分析可执行文件格式elf的格式（无需回答）
 
 ### 4.1 C函数调用的实现
@@ -30,8 +44,18 @@
 ### 4.2 x86中断处理过程
 
 1. x86/RV中断处理中硬件压栈内容？用户态中断和内核态中断的硬件压栈有什么不同？
+- k2k: `cs eip eflags (err)`
+- u2k: `ss esp cs eip eflags (err)`
+
 2. 为什么在用户态的中断响应要使用内核堆栈？
+
+可能是为了防止用户在堆栈上恶意放置特定数据，威胁内核的安全
+
 3. x86中trap类型的中断门与interrupt类型的中断门有啥设置上的差别？如果在设置中断门上不做区分，会有什么可能的后果?
+
+出错（fault）保存的EIP指向触发异常的那条指令；而陷入（trap）保存的EIP指向触发异常的那条指令的下一条指令。因此，当从异常返回时，出错（fault）会重新执行那条指令；而陷入（trap）就不会重新执行
+
+如果不做区分，则不能区分这两种需求：例如page fault需要重新执行那条指令，而syscall需要执行下一条指令。
 
 ### 4.3 练习四和五 ucore内核映像加载和函数调用栈分析
 
@@ -41,9 +65,19 @@
 
 1. CPU加电初始化后中断是使能的吗？为什么？
 
+不是，此时中断向量表尚未建立，无法正确处理中断
+
 ## 开放思考题
 
 1. 在ucore/rcore中如何修改lab1, 实现在出现除零异常时显示一个字符串的异常服务例程？
+
+在trap_dispatch中加一个
+```
+  case T_DIVIDE:
+    cprintf(...);
+    break;
+```
+
 2. 在ucore lab1/bin目录下，通过`objcopy -O binary kernel kernel.bin`可以把elf格式的ucore kernel转变成体积更小巧的binary格式的ucore kernel。为此，需要如何修改lab1的bootloader, 能够实现正确加载binary格式的ucore OS？ (hard)
 3. GRUB是一个通用的x86 bootloader，被用于加载多种操作系统。如果放弃lab1的bootloader，采用GRUB来加载ucore OS，请问需要如何修改lab1, 能够实现此需求？ (hard)
 4. 如果没有中断，操作系统设计会有哪些问题或困难？在这种情况下，能否完成对外设驱动和对进程的切换等操作系统核心功能？

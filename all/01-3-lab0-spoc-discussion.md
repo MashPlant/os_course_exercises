@@ -51,6 +51,18 @@
 ```
 
 - 你理解的risc-v的特权模式有什么区别？不同模式在地址访问方面有何特征？
+RISC-V定义了三个特权基本，分别是U-mode、S-mode和M-mode，即用户模式、管理模式和机器模式。三种模式只有M-mode是必须要实现的，其它两种模式是可选的。当只实现M-mode的时候，RISC-V就是作为一个微控制器来使用了，只能裸跑或者使用RTOS。当实现了全部三种模式，RISC-V可以作为应用处理器来实现，可以运行Linux等系统。将S-mode和U-mode设计成可选项是RISC-V支持微控制器应用的首要特性。
+
+#### User mode: the mode which runs the users programs and the lowest privilege level.
+No direct access to I/O or privileged instructions or kernel memory or other processes.
+Memory management unit always on under Linux.
+#### Supervisor mode: the mode that the majority of the Linux kernel or other O/S runs.
+Access to most privileged instructions and I/O via ioremap function.
+Memory management unit may be on or off.
+#### Machine mode: Bare-metal / First-stage boot loader and BBL runs in this mode.
+Memory management off.
+No memory protection.
+#### Hypervisor mode: Might be supported in future, would be used to support virtualisation such as Xen hypervisor.
 
 - 理解ucore中list_entry双向链表数据结构及其4个基本操作函数和ucore中一些基于它的代码实现（此题不用填写内容）
 
